@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 from collections import namedtuple
 import torch
@@ -6,7 +6,7 @@ import numpy as np
 import torch.nn.functional as F
 
 from pytorch_pretrained_bert import BertTokenizer
-from occlusion.modeling import BertForMaskedLMLayer
+from xbert.modeling import BertForMaskedLMLayer
 
 Candidate = namedtuple("Candidate", ["tokens", "id", "replaced_index", "weight"])
 

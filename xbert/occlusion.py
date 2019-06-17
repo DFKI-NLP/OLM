@@ -1,11 +1,11 @@
-from typing import List, Tuple, Dict, Any, Callable, Optional
+from typing import List, Tuple, Dict, Any
 
 import numpy as np
 from collections import defaultdict
 from pytorch_pretrained_bert import BertTokenizer
 
-from occlusion.modeling import BertForMaskedLMLayer
-from occlusion.candidates import get_candidates
+from xbert.modeling import BertForMaskedLMLayer
+from xbert.candidates import get_candidates
 
 
 def odds(p):
@@ -26,7 +26,7 @@ class Engine:
         self.bert = bert.to(cuda_device)
         self.tokenizer = BertTokenizer.from_pretrained(bert_model)
 
-    def run(self, inputs: List[Tuple[int, str]]) -> List[Tuple[List[str], List[float]]]:
+    def run(self, inputs: List[Tuple[int, List[str]]]) -> List[Tuple[List[str], List[float]]]:
         verbose = self.params.get("verbose", False)
 
         cuda_device = self.params.get("cuda_device", -1)
