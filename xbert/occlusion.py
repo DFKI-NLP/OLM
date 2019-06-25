@@ -8,8 +8,15 @@ from xbert.modeling import BertForMaskedLMLayer
 from xbert.candidates import get_candidates
 
 
-def odds(p):
-    return p / (1. - p)
+def weight_of_evidence(p_original, p_replaced):
+    #definition taken from http://lkm.fri.uni-lj.si/rmarko/papers/RobnikSikonjaKononenko08-TKDE.pdf
+    #and https://arxiv.org/abs/1702.04595
+    def odds(p):
+        return p / (1. + 1e-12 - p)
+    return np.log2(odds(p_original)) - np.log2(odds(p_replaced))
+
+def difference_of_probabilities(p_original, p_replaced):
+    return p_original - p_replaced
 
 
 class Engine:
@@ -26,7 +33,7 @@ class Engine:
         self.bert = bert.to(cuda_device)
         self.tokenizer = BertTokenizer.from_pretrained(bert_model)
 
-    def run(self, inputs: List[Tuple[int, List[str]]]) -> List[Tuple[List[str], List[float]]]:
+    def run(self, inputs: List[Tuple[int, List[str]]], relevance_scoring=weight_of_evidence) -> List[Tuple[List[str], List[float]]]:
         verbose = self.params.get("verbose", False)
 
         cuda_device = self.params.get("cuda_device", -1)
@@ -68,7 +75,7 @@ class Engine:
 
                 p_replaced = sum(positional_probabilities) / n_samples
 
-                relevance = np.log2(odds(p_original + 1e-12)) - np.log2(odds(p_replaced + 1e-12))
+                relevance = relevance_scoring(p_original, p_replaced)
 
                 relevances[input_id][position] = relevance
 
