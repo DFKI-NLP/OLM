@@ -47,3 +47,6 @@ Dockerfile~
 
 # VS Code
 .vscode
+
+# Jupyter
+*.ipynb_checkpoints/
