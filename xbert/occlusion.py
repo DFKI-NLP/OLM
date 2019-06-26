@@ -12,11 +12,14 @@ def weight_of_evidence(p_original, p_replaced):
     #definition taken from http://lkm.fri.uni-lj.si/rmarko/papers/RobnikSikonjaKononenko08-TKDE.pdf
     #and https://arxiv.org/abs/1702.04595
     def odds(p):
-        return p / (1. + 1e-12 - p)
-    return np.log2(odds(p_original)) - np.log2(odds(p_replaced))
+        return np.log2(p / (1. + 1e-12 - p))
+    return odds(p_original) - odds(p_replaced)
 
 def difference_of_probabilities(p_original, p_replaced):
     return p_original - p_replaced
+
+def difference_of_log_probabilities(p_original, p_replaced):
+    return np.log(p_original + 1e-12) - np.log(p_replaced + 1e-12)
 
 
 class Engine:
@@ -33,7 +36,7 @@ class Engine:
         self.bert = bert.to(cuda_device)
         self.tokenizer = BertTokenizer.from_pretrained(bert_model)
 
-    def run(self, inputs: List[Tuple[int, List[str]]], relevance_scoring=weight_of_evidence) -> List[Tuple[List[str], List[float]]]:
+    def run(self, inputs: List[Tuple[int, List[str]]]) -> List[Tuple[List[str], List[float]]]:
         verbose = self.params.get("verbose", False)
 
         cuda_device = self.params.get("cuda_device", -1)
@@ -56,13 +59,16 @@ class Engine:
             batch_candidates = candidates[i: i + batch_size]
             candidate_probabilities += self.batcher(batch_candidates)
 
-        positional_probabilities = defaultdict(lambda: defaultdict(list))
+        self.positional_probabilities = defaultdict(lambda: defaultdict(list))
         for candidate, p_candidate in zip(candidates, candidate_probabilities):
             p_candidate = candidate.weight * p_candidate
-            positional_probabilities[candidate.id][candidate.replaced_index].append(p_candidate)
+            self.positional_probabilities[candidate.id][candidate.replaced_index].append(p_candidate)
 
+    def relevances(self, relevance_scoring=weight_of_evidence):
         relevances = defaultdict(lambda: defaultdict(float))
-        for input_id, input_probabilities in positional_probabilities.items():
+        n_samples = self.params.get("n_samples")
+
+        for input_id, input_probabilities in self.positional_probabilities.items():
             for position, positional_probabilities in input_probabilities.items():
 
                 # skip relevance computation for original input
