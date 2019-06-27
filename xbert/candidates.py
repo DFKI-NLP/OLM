@@ -88,7 +88,9 @@ def prob_for_index_at_layer(tokens: List[str], index: int, layer: int, mask_inde
     input_token_indices = torch.tensor([tokenizer.convert_tokens_to_ids(input_tokens)],
                                        device=cuda_device)
 
-    logits = bert(input_token_indices, layer=layer)[0]
+    with torch.no_grad():
+        logits = bert(input_token_indices, layer=layer)[0]
+
     probabilities = F.softmax(logits[0, 1:-1], dim=1)[index].detach().cpu().numpy()
 
     return probabilities
