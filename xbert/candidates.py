@@ -53,11 +53,12 @@ def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
 
         # TODO: replace by something smarter (return Candidate [tokens, replaced_index, weight])
         # TODO: also make sure that filter subword replacement (seq len original != seq len candidate)
-        for _ in range(n_samples):
-            # sample s times from pt
-            # predict and get probability of class c at token_index
-            sampled_token_index = np.random.choice(vocab_size, p=p_with_masked_token)
-            sampled_token = tokenizer.convert_ids_to_tokens([sampled_token_index])[0]
+        # sample n_samples times from pt
+        # predict and get probability of class c at token_index
+        sampled_token_indices = np.random.choice(vocab_size, size=n_samples, p=p_with_masked_token)
+        unique_token_indices, unique_tokens_counts = np.unique(sampled_token_indices, return_counts=True)
+        for unique_token_index, unique_token_count in zip(unique_token_indices, unique_tokens_counts):
+            sampled_token = tokenizer.convert_ids_to_tokens([unique_token_index])[0]
 
             # assert not sampled_token.startswith("##")
 
@@ -66,7 +67,7 @@ def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
             candidate = Candidate(tokens=tokens_with_replacement,
                                   id=input_id,
                                   replaced_index=t,
-                                  weight=1.)
+                                  weight=unique_token_count)
             candidates.append(candidate)
 
     return candidates
