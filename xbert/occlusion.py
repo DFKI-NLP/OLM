@@ -8,18 +8,19 @@ from xbert.modeling import BertForMaskedLMLayer
 from xbert.candidates import get_candidates
 
 
-def weight_of_evidence(p_original, p_replaced):
+def relevance_scoring(p_original, p_replaced, n_samples, method):
+    #takes a relevance scoring method and applies it to original and samples probabilities
+    #difference of average is the default method
+    return method(p_original) - sum([method(probability)*weight for probability, weight in p_replaced]) / n_samples
+
+def weight_of_evidence(p):
     #definition taken from http://lkm.fri.uni-lj.si/rmarko/papers/RobnikSikonjaKononenko08-TKDE.pdf
     #and https://arxiv.org/abs/1702.04595
-    def odds(p):
-        return np.log2(p / (1. + 1e-12 - p))
-    return odds(p_original) - odds(p_replaced)
+    return np.log2(p / (1. + 1e-12 - p))
 
-def difference_of_probabilities(p_original, p_replaced):
-    return p_original - p_replaced
-
-def difference_of_log_probabilities(p_original, p_replaced):
-    return np.log(p_original + 1e-12) - np.log(p_replaced + 1e-12)
+def difference_of_log_probabilities(p):
+    #shows how much the cross entropy of the true label changes with sampled replacements
+    return np.log(p + 1e-12)
 
 
 class Engine:
@@ -61,15 +62,14 @@ class Engine:
 
         self.positional_probabilities = defaultdict(lambda: defaultdict(list))
         for candidate, p_candidate in zip(candidates, candidate_probabilities):
-            p_candidate = candidate.weight * p_candidate
-            self.positional_probabilities[candidate.id][candidate.replaced_index].append(p_candidate)
+            self.positional_probabilities[candidate.id][candidate.replaced_index].append((p_candidate, candidate.weight))
 
-    def relevances(self, relevance_scoring=weight_of_evidence):
+    def relevances(self, scoring_method=lambda x:x):
         relevances = defaultdict(lambda: defaultdict(float))
         n_samples = self.params.get("n_samples")
 
         for input_id, input_probabilities in self.positional_probabilities.items():
-            for position, positional_probabilities in input_probabilities.items():
+            for position, probabilities_weights_tuple_list in input_probabilities.items():
 
                 # skip relevance computation for original input
                 if position == -1:
@@ -77,11 +77,11 @@ class Engine:
 
                 assert len(input_probabilities[-1]) == 1
 
-                p_original = input_probabilities[-1][0]
+                p_original = input_probabilities[-1][0][0]
 
-                p_replaced = sum(positional_probabilities) / n_samples
-
-                relevance = relevance_scoring(p_original, p_replaced)
+                #compare the probability of the original input with the weighted list of sampled inputs
+                relevance = relevance_scoring(p_original, probabilities_weights_tuple_list,
+                                              n_samples, scoring_method)
 
                 relevances[input_id][position] = relevance
 
