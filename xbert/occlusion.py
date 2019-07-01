@@ -43,6 +43,7 @@ class Engine:
         cuda_device = self.params.get("cuda_device", -1)
         batch_size = self.params.get("batch_size", 32)
         n_samples = self.params.get("n_samples")
+        unknown = self.params.get("unknown")
 
         candidates = []
         for input_id, tokens in inputs:
@@ -52,6 +53,7 @@ class Engine:
                                          tokenizer=self.tokenizer,
                                          n_samples=n_samples,
                                          replace_subwords=False,
+                                         unknown=unknown,
                                          cuda_device=cuda_device,
                                          verbose=verbose)
 
@@ -63,6 +65,8 @@ class Engine:
         self.positional_probabilities = defaultdict(lambda: defaultdict(list))
         for candidate, p_candidate in zip(candidates, candidate_probabilities):
             self.positional_probabilities[candidate.id][candidate.replaced_index].append((p_candidate, candidate.weight))
+        
+        return candidates
 
     def relevances(self, scoring_method=lambda x:x):
         relevances = defaultdict(lambda: defaultdict(float))

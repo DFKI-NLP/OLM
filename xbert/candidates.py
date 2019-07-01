@@ -13,7 +13,8 @@ Candidate = namedtuple("Candidate", ["tokens", "id", "replaced_index", "weight"]
 
 def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
                    tokenizer: BertTokenizer, n_samples: int, replace_subwords: bool,
-                   cuda_device: int, verbose: bool = False) -> List[Candidate]:
+                   cuda_device: int, unknown: bool = False,
+                   verbose: bool = False) -> List[Candidate]:
     vocab_size = len(tokenizer.vocab)
 
     # we have to retokenize the input because BERT uses subword tokens
@@ -34,6 +35,16 @@ def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
     # for t, _ in enumerate(subword_tokens):
     for t, _ in enumerate(tokens):
         tokens_with_mask = list(tokens)
+
+        if unknown:
+            tokens_with_mask[t] = "!§$%&/()=?"
+            candidate = Candidate(tokens=tokens_with_mask,
+                                  id=input_id,
+                                  replaced_index=t,
+                                  weight=1)
+            candidates.append(candidate)
+            continue
+        
         tokens_with_mask[t] = "[MASK]"
 
         subword_tokens = tokenizer.tokenize(" ".join(tokens_with_mask))
