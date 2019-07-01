@@ -41,7 +41,7 @@ def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
             candidate = Candidate(tokens=tokens_with_mask,
                                   id=input_id,
                                   replaced_index=t,
-                                  weight=1)
+                                  weight=n_samples)
             candidates.append(candidate)
             continue
         
