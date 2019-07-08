@@ -8,10 +8,16 @@ from xbert.modeling import BertForMaskedLMLayer
 from xbert.candidates import get_candidates
 
 
-def relevance_scoring(p_original, p_replaced, n_samples, method):
+def average_relevance_scoring(p_original, p_replaced, n_samples, method):
     #takes a relevance scoring method and applies it to original and samples probabilities
-    #difference of average is the default method
+    #output is the difference of original and average of the replaced values
     return method(p_original) - sum([method(probability)*weight for probability, weight in p_replaced]) / n_samples
+
+def variance_relevance_scoring(p_original, p_replaced, n_samples, method):
+    #takes a relevance scoring method and applies it to samples probabilities
+    #output is the variance of the replaced values
+    average = sum([method(probability)*weight for probability, weight in p_replaced]) / n_samples
+    return sum([(method(probability)-average)**2 * weight for probability, weight in p_replaced]) / n_samples
 
 def weight_of_evidence(p):
     #definition taken from http://lkm.fri.uni-lj.si/rmarko/papers/RobnikSikonjaKononenko08-TKDE.pdf
@@ -68,7 +74,9 @@ class Engine:
         
         return candidates
 
-    def relevances(self, scoring_method=lambda x:x):
+    def relevances(self, variance=False, scoring_method=lambda x:x):
+        #calculates relevance by average or variance
+        #default scoring of the candidates is the difference of prediction
         relevances = defaultdict(lambda: defaultdict(float))
         n_samples = self.params.get("n_samples")
 
@@ -83,9 +91,12 @@ class Engine:
 
                 p_original = input_probabilities[-1][0][0]
 
-                #compare the probability of the original input with the weighted list of sampled inputs
-                relevance = relevance_scoring(p_original, probabilities_weights_tuple_list,
-                                              n_samples, scoring_method)
+                if variance:
+                    relevance = variance_relevance_scoring(p_original,
+                        probabilities_weights_tuple_list, n_samples, scoring_method)
+                else:
+                    relevance = average_relevance_scoring(p_original,
+                        probabilities_weights_tuple_list, n_samples, scoring_method)
 
                 relevances[input_id][position] = relevance
 
