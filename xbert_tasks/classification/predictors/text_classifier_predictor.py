@@ -4,7 +4,7 @@ from allennlp.common.util import JsonDict
 from allennlp.data import Instance
 from allennlp.predictors.predictor import Predictor
 
-@Predictor.register('text_classifier')
+@Predictor.register('sst_text_classifier')
 class TextClassifierPredictor(Predictor):
     def predict_json(self, inputs: JsonDict) -> JsonDict:
         instance = self._json_to_instance(inputs)
