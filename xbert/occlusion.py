@@ -28,6 +28,24 @@ def difference_of_log_probabilities(p):
     #shows how much the cross entropy of the true label changes with sampled replacements
     return np.log(p + 1e-12)
 
+def calculate_correlation(relevance_dict_1, relevance_dict2):
+    #calculates correlation of relevances of two methods by input and averages these
+    assert relevance_dict_1.keys() == relevance_dict2.keys()
+
+    zipped_value_dict = defaultdict(list)
+    for sentence_key, sentence_value_list in relevance_dict_1.items():
+        for word_key, relevance in sentence_value_list.items():
+            zipped_value_dict[sentence_key].append([relevance, relevance_dict2[sentence_key][word_key]])
+
+    result = [0, 0]
+    for sentence_zip_array in zipped_value_dict.values():
+        sentence_relevance_correlation = np.corrcoef(np.array(sentence_zip_array), rowvar=False)[0][1]
+        if not np.isnan(sentence_relevance_correlation):
+            result[0] += sentence_relevance_correlation
+            result[1] += 1
+
+    return result[0]/result[1]
+
 
 class Engine:
     def __init__(self, params: Dict[str, Any], batcher, prepare = None) -> None:
