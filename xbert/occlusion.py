@@ -2,9 +2,8 @@ from typing import List, Tuple, Dict, Any
 
 import numpy as np
 from collections import defaultdict
-from pytorch_pretrained_bert import BertTokenizer
 
-from xbert.modeling import BertForMaskedLMLayer
+from transformers import BertTokenizer, BertForMaskedLM
 from xbert.candidates import get_candidates
 
 
@@ -13,20 +12,24 @@ def average_relevance_scoring(p_original, p_replaced, n_samples, method):
     #output is the difference of original and average of the replaced values
     return method(p_original) - sum([method(probability)*weight for probability, weight in p_replaced]) / n_samples
 
+
 def std_relevance_scoring(p_original, p_replaced, n_samples, method):
     #takes a relevance scoring method and applies it to samples probabilities
     #output is the std of the replaced values
     average = sum([method(probability)*weight for probability, weight in p_replaced]) / n_samples
     return np.sqrt(sum([(method(probability)-average)**2 * weight for probability, weight in p_replaced]) / n_samples)
 
+
 def weight_of_evidence(p):
     #definition taken from http://lkm.fri.uni-lj.si/rmarko/papers/RobnikSikonjaKononenko08-TKDE.pdf
     #and https://arxiv.org/abs/1702.04595
     return np.log2(p / (1. + 1e-12 - p))
 
+
 def difference_of_log_probabilities(p):
     #shows how much the cross entropy of the true label changes with sampled replacements
     return np.log(p + 1e-12)
+
 
 def calculate_correlation(relevance_dict_1, relevance_dict2):
     #calculates correlation of relevances of two methods by input and averages these
@@ -48,7 +51,7 @@ def calculate_correlation(relevance_dict_1, relevance_dict2):
 
 
 class Engine:
-    def __init__(self, params: Dict[str, Any], batcher, prepare = None) -> None:
+    def __init__(self, params: Dict[str, Any], batcher, prepare=None) -> None:
         self.params = params
         self.batcher = batcher
         self.prepare = prepare
@@ -56,12 +59,13 @@ class Engine:
         bert_model = self.params.get("bert_model", "bert-base-uncased")
         cuda_device = self.params.get("cuda_device", -1)
 
-        bert = BertForMaskedLMLayer.from_pretrained(bert_model)
+        bert = BertForMaskedLM.from_pretrained(bert_model)
         bert.eval()
         self.bert = bert.to(cuda_device)
         self.tokenizer = BertTokenizer.from_pretrained(bert_model)
 
-    def run(self, inputs: List[Tuple[int, List[str]]]) -> List[Tuple[List[str], List[float]]]:
+    def run(self, inputs: List[Tuple[int, List[str]]]) -> List[Tuple[List[str],
+                                                               List[float]]]:
         verbose = self.params.get("verbose", False)
 
         cuda_device = self.params.get("cuda_device", -1)
@@ -89,10 +93,10 @@ class Engine:
         self.positional_probabilities = defaultdict(lambda: defaultdict(list))
         for candidate, p_candidate in zip(candidates, candidate_probabilities):
             self.positional_probabilities[candidate.id][candidate.replaced_index].append((p_candidate, candidate.weight))
-        
+
         return candidates
 
-    def relevances(self, std=False, scoring_method=lambda x:x):
+    def relevances(self, std=False, scoring_method=lambda x: x):
         #calculates relevance by average or standard deviation
         #default scoring of the candidates is the difference of prediction
         relevances = defaultdict(lambda: defaultdict(float))

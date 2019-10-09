@@ -5,25 +5,16 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 
-from pytorch_pretrained_bert import BertTokenizer
-from xbert.modeling import BertForMaskedLMLayer
+from transformers import BertTokenizer, BertForMaskedLM
 
 Candidate = namedtuple("Candidate", ["tokens", "id", "replaced_index", "weight"])
 
 
-def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
+def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLM,
                    tokenizer: BertTokenizer, n_samples: int, replace_subwords: bool,
                    cuda_device: int, unknown: bool = False,
                    verbose: bool = False) -> List[Candidate]:
     vocab_size = len(tokenizer.vocab)
-
-    # we have to retokenize the input because BERT uses subword tokens
-    # subword_tokens = tokenizer.tokenize(" ".join(tokens))
-
-    # if verbose:
-    #     print(f"Subword tokens: {subword_tokens}")
-
-    # assert len(tokens) == len(subword_tokens)
 
     candidates = []
     # add original sentence to candidates (with replacement index == -1)
@@ -37,25 +28,25 @@ def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
         tokens_with_mask = list(tokens)
 
         if unknown:
-            tokens_with_mask[t] = "!§$%&/()=?"
+            tokens_with_mask[t] = tokenizer.unk_token
             candidate = Candidate(tokens=tokens_with_mask,
                                   id=input_id,
                                   replaced_index=t,
                                   weight=n_samples)
             candidates.append(candidate)
             continue
-        
-        tokens_with_mask[t] = "[MASK]"
+
+        tokens_with_mask[t] = tokenizer.mask_token
 
         subword_tokens = tokenizer.tokenize(" ".join(tokens_with_mask))
-        masked_index = subword_tokens.index("[MASK]")
+        masked_index = subword_tokens.index(tokenizer.mask_token)
 
         if verbose:
             print(f"Subword tokens: {subword_tokens}")
+            print(f"Masked index: {masked_index}")
 
         p_with_masked_token = prob_for_index_at_layer(subword_tokens,
                                                       index=masked_index,
-                                                      layer=-1,
                                                       mask_index=True,
                                                       bert=bert,
                                                       tokenizer=tokenizer,
@@ -81,27 +72,30 @@ def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLMLayer,
                                   weight=unique_token_count)
             candidates.append(candidate)
 
+    if verbose:
+        print(candidates)
+
     return candidates
 
 
-def prob_for_index_at_layer(tokens: List[str], index: int, layer: int, mask_index: bool,
-                            bert: BertForMaskedLMLayer, tokenizer: BertTokenizer,
+def prob_for_index_at_layer(tokens: List[str], index: int, mask_index: bool,
+                            bert: BertForMaskedLM, tokenizer: BertTokenizer,
                             cuda_device: int, verbose: bool) -> np.array:
 
     if mask_index:
         tokens = list(tokens)
-        tokens[index] = "[MASK]"
+        tokens[index] = tokenizer.mask_token
 
-    input_tokens = ["[CLS]"] + tokens + ["[SEP]"]
+    input_token_ids = tokenizer.encode(text=tokens,
+                                       add_special_tokens=True,
+                                       return_tensors="pt").to(cuda_device)
 
     if verbose:
-        print(f"Input tokens: {input_tokens}")
-
-    input_token_indices = torch.tensor([tokenizer.convert_tokens_to_ids(input_tokens)],
-                                       device=cuda_device)
+        print(f"Input tokens: {tokens}")
+        print(f"Input token ids: {input_token_ids}")
 
     with torch.no_grad():
-        logits = bert(input_token_indices, layer=layer)[0]
+        logits = bert(input_token_ids)[0]
 
     probabilities = F.softmax(logits[0, 1:-1], dim=1)[index].detach().cpu().numpy()
 
