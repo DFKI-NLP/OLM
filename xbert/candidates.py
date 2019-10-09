@@ -12,7 +12,7 @@ Candidate = namedtuple("Candidate", ["tokens", "id", "replaced_index", "weight"]
 
 def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLM,
                    tokenizer: BertTokenizer, n_samples: int, replace_subwords: bool,
-                   cuda_device: int, unknown: bool = False,
+                   cuda_device: int, unknown: bool = False, unk_token: str = None,
                    verbose: bool = False) -> List[Candidate]:
     vocab_size = len(tokenizer.vocab)
 
@@ -28,7 +28,7 @@ def get_candidates(tokens: List[str], input_id: int, bert: BertForMaskedLM,
         tokens_with_mask = list(tokens)
 
         if unknown:
-            tokens_with_mask[t] = tokenizer.unk_token
+            tokens_with_mask[t] = unk_token
             candidate = Candidate(tokens=tokens_with_mask,
                                   id=input_id,
                                   replaced_index=t,

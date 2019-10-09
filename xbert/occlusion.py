@@ -72,6 +72,10 @@ class Engine:
         batch_size = self.params.get("batch_size", 32)
         n_samples = self.params.get("n_samples")
         unknown = self.params.get("unknown")
+        unk_token = self.params.get("unk_token")
+
+        if unknown and not unk_token:
+            raise ValueError("UNK occlusion requires 'unk_token' parameter.")
 
         candidates = []
         for input_id, tokens in inputs:
@@ -82,6 +86,7 @@ class Engine:
                                          n_samples=n_samples,
                                          replace_subwords=False,
                                          unknown=unknown,
+                                         unk_token=unk_token,
                                          cuda_device=cuda_device,
                                          verbose=verbose)
 
