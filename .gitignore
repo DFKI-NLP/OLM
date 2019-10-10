@@ -50,3 +50,9 @@ Dockerfile~
 
 # Jupyter
 *.ipynb_checkpoints/
+
+models/*
+!models/.gitkeep
+
+data/*
+!data/.gitkeep
