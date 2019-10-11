@@ -51,6 +51,9 @@ Dockerfile~
 # Jupyter
 *.ipynb_checkpoints/
 
+# Coverage
+.coverage
+
 models/*
 !models/.gitkeep
 

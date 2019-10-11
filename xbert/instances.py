@@ -50,7 +50,7 @@ class InputInstance:
         self.id = id_
         self.token_fields = {name: TokenField(tokens)
                              for name, tokens in token_fields.items()}
-        for key, value in token_fields.items():
+        for key, value in self.token_fields.items():
             setattr(self, key, value)
 
     def __repr__(self) -> str:

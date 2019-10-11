@@ -1,2 +1,6 @@
 transformers
 allennlp
+
+# testing
+pytest
+pytest-cov
