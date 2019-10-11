@@ -21,7 +21,15 @@ Run model training with the following command:
 allennlp train ./xbert_tasks/sst2_sentiment_clf.jsonnet -s <MODEL_DIR> --include-package xbert_tasks
 ```
 
-
-## Notebook
+#### Notebook
 
 Change `SST_DATASET_PATH` to the dataset path and `MODEL_DIR` to the directory of the persisted model (e.g. as specified in the above training command).
+
+### MNLI
+Dataset (part of [GLUE](https://gluebenchmark.com/tasks)): [Download](https://firebasestorage.googleapis.com/v0/b/mtl-sentence-representations.appspot.com/o/data%2FMNLI.zip?alt=media&token=50329ea1-e339-40e2-809c-10c40afff3ce)
+
+Download the dataset and unpack into `data/glue_tasks/MNLI/`.
+
+#### Notebook
+
+`notebooks/relevance-mnli.ipynb` contains the notebook to visualize occlusion results.

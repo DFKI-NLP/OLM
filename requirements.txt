@@ -1,5 +1,6 @@
 transformers
 allennlp
+segtok
 
 # testing
 pytest
