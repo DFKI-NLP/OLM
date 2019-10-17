@@ -1,10 +1,10 @@
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Callable
 
-import numpy as np
 from collections import defaultdict
+import random
+import numpy as np
 
-from transformers import BertTokenizer, BertForMaskedLM
-from xbert.candidates import get_candidates
+from xbert import InputInstance, OccludedInstance, Config
 
 
 def average_relevance_scoring(p_original, p_replaced, n_samples, method):
@@ -51,79 +51,65 @@ def calculate_correlation(relevance_dict_1, relevance_dict2):
 
 
 class Engine:
-    def __init__(self, params: Dict[str, Any], batcher, prepare=None) -> None:
-        self.params = params
+    def __init__(self,
+                 config: Config,
+                 batcher: Callable[[List[OccludedInstance]], List[float]],
+                 prepare=None) -> None:
+        self.config = config
         self.batcher = batcher
         self.prepare = prepare
 
-        bert_model = self.params.get("bert_model", "bert-base-uncased")
-        cuda_device = self.params.get("cuda_device", -1)
+    def run(self, input_instances: List[InputInstance]) -> List[Tuple[List[str],
+                                                                      List[float]]]:
+        strategy = self.config.strategy
+        batch_size = self.config.batch_size
 
-        bert = BertForMaskedLM.from_pretrained(bert_model)
-        bert.eval()
-        self.bert = bert.to(cuda_device)
-        self.tokenizer = BertTokenizer.from_pretrained(bert_model)
+        np.random.seed(self.config.seed)
+        random.seed(self.config.seed)
 
-    def run(self, inputs: List[Tuple[int, List[str]]]) -> List[Tuple[List[str],
-                                                               List[float]]]:
-        verbose = self.params.get("verbose", False)
+        occluded_instances = []
+        for instance in input_instances:
+            occluded_instances += strategy.occluded_instances(instance)
 
-        cuda_device = self.params.get("cuda_device", -1)
-        batch_size = self.params.get("batch_size", 32)
-        n_samples = self.params.get("n_samples")
-        unknown = self.params.get("unknown")
-        unk_token = self.params.get("unk_token")
+        instance_probabilities = []
+        for i in range(0, len(occluded_instances), batch_size):
+            batch_candidates = occluded_instances[i: i + batch_size]
+            instance_probabilities += self.batcher(batch_candidates)
 
-        if unknown and not unk_token:
-            raise ValueError("UNK occlusion requires 'unk_token' parameter.")
+        return occluded_instances, instance_probabilities
 
-        candidates = []
-        for input_id, tokens in inputs:
-            candidates += get_candidates(tokens=tokens,
-                                         input_id=input_id,
-                                         bert=self.bert,
-                                         tokenizer=self.tokenizer,
-                                         n_samples=n_samples,
-                                         replace_subwords=False,
-                                         unknown=unknown,
-                                         unk_token=unk_token,
-                                         cuda_device=cuda_device,
-                                         verbose=verbose)
-
-        candidate_probabilities = []
-        for i in range(0, len(candidates), batch_size):
-            batch_candidates = candidates[i: i + batch_size]
-            candidate_probabilities += self.batcher(batch_candidates)
-
-        self.positional_probabilities = defaultdict(lambda: defaultdict(list))
-        for candidate, p_candidate in zip(candidates, candidate_probabilities):
-            self.positional_probabilities[candidate.id][candidate.replaced_index].append((p_candidate, candidate.weight))
-
-        return candidates
-
-    def relevances(self, std=False, scoring_method=lambda x: x):
+    def relevances(self, occluded_instances, instance_probabilities, std=False, scoring_method=lambda x: x):
         #calculates relevance by average or standard deviation
         #default scoring of the candidates is the difference of prediction
-        relevances = defaultdict(lambda: defaultdict(float))
-        n_samples = self.params.get("n_samples")
 
-        for input_id, input_probabilities in self.positional_probabilities.items():
+        positional_probabilities = defaultdict(lambda: defaultdict(list))
+        for instance, p_instance in zip(occluded_instances, instance_probabilities):
+            positional_probabilities[instance.id][instance.occluded_indices].append((p_instance, instance.weight))
+
+        relevances = defaultdict(lambda: defaultdict(float))
+        n_samples = getattr(self.config.strategy, "n_samples", 1)
+
+        for input_id, input_probabilities in positional_probabilities.items():
             for position, probabilities_weights_tuple_list in input_probabilities.items():
 
                 # skip relevance computation for original input
-                if position == -1:
+                if position is None:
                     continue
 
-                assert len(input_probabilities[-1]) == 1
+                assert len(input_probabilities[None]) == 1
 
-                p_original = input_probabilities[-1][0][0]
+                p_original = input_probabilities[None][0][0]
 
                 if std:
                     relevance = std_relevance_scoring(p_original,
-                        probabilities_weights_tuple_list, n_samples, scoring_method)
+                                                      probabilities_weights_tuple_list,
+                                                      n_samples,
+                                                      scoring_method)
                 else:
                     relevance = average_relevance_scoring(p_original,
-                        probabilities_weights_tuple_list, n_samples, scoring_method)
+                                                          probabilities_weights_tuple_list,
+                                                          n_samples,
+                                                          scoring_method)
 
                 relevances[input_id][position] = relevance
 

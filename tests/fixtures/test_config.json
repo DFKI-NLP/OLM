@@ -1,0 +1,5 @@
+{
+    "strategy": "unk_replacement",
+    "unk_token": "__UNK__",
+    "seed": 1234
+}

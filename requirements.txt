@@ -1,2 +1,7 @@
 transformers
 allennlp
+segtok
+
+# testing
+pytest
+pytest-cov
