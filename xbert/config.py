@@ -8,11 +8,11 @@ class Config:
     def __init__(self, **kwargs: Dict[str, str]) -> None:
         strategy = kwargs.pop("strategy", None)
         if strategy is None:
-            raise ValueError("No occlusion strategy specified.")
+            raise ValueError("No strategy specified.")
 
         strategy = strategy.lower()
         if strategy not in STRATEGY_REGISTRY.keys():
-            raise ValueError("Unknown occlusion strategy '%s'." % strategy)
+            raise ValueError("Unknown strategy '%s'." % strategy)
 
         self.batch_size = kwargs.pop("batch_size", 32)
         self.seed = kwargs.pop("seed", 1111)

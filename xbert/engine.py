@@ -1,23 +1,11 @@
 from typing import List, Tuple, Callable
 
 from collections import defaultdict
+import time
 import random
 import numpy as np
 
 from xbert import InputInstance, OccludedInstance, Config
-
-
-def average_relevance_scoring(p_original, p_replaced, n_samples, method):
-    #takes a relevance scoring method and applies it to original and samples probabilities
-    #output is the difference of original and average of the replaced values
-    return method(p_original) - sum([method(probability)*weight for probability, weight in p_replaced]) / n_samples
-
-
-def std_relevance_scoring(p_original, p_replaced, n_samples, method):
-    #takes a relevance scoring method and applies it to samples probabilities
-    #output is the std of the replaced values
-    average = sum([method(probability)*weight for probability, weight in p_replaced]) / n_samples
-    return np.sqrt(sum([(method(probability)-average)**2 * weight for probability, weight in p_replaced]) / n_samples)
 
 
 def weight_of_evidence(p):
@@ -67,58 +55,23 @@ class Engine:
         np.random.seed(self.config.seed)
         random.seed(self.config.seed)
 
-        occluded_instances = []
+        candidate_instances = []
+        # time1 = time.time()
         for instance in input_instances:
-            occluded_instances += strategy.occluded_instances(instance)
+            candidate_instances += strategy.get_candidate_instances(instance)
+        # time2 = time.time()
+        # print('{:s} took {:.3f} ms'.format("CANDIDATES", (time2-time1)*1000.0))
+        # print("Num candidate instances: ", len(candidate_instances))
 
-        instance_probabilities = []
-        for i in range(0, len(occluded_instances), batch_size):
-            batch_candidates = occluded_instances[i: i + batch_size]
-            instance_probabilities += self.batcher(batch_candidates)
+        candidate_results = []
+        for i in range(0, len(candidate_instances), batch_size):
+            batch_candidates = candidate_instances[i: i + batch_size]
+            # time1 = time.time()
+            candidate_results += self.batcher(batch_candidates)
+            # time2 = time.time()
+            # print('{:s} took {:.3f} ms'.format("INFERENCE", (time2-time1)*1000.0))
 
-        return occluded_instances, instance_probabilities
+        return candidate_instances, candidate_results
 
-    def relevances(self, occluded_instances, instance_probabilities, std=False, scoring_method=lambda x: x):
-        #calculates relevance by average or standard deviation
-        #default scoring of the candidates is the difference of prediction
-
-        positional_probabilities = defaultdict(lambda: defaultdict(list))
-        for instance, p_instance in zip(occluded_instances, instance_probabilities):
-            positional_probabilities[instance.id][instance.occluded_indices].append((p_instance, instance.weight))
-
-        relevances = defaultdict(lambda: defaultdict(float))
-        n_samples = getattr(self.config.strategy, "n_samples", 1)
-
-        for input_id, input_probabilities in positional_probabilities.items():
-            for position, probabilities_weights_tuple_list in input_probabilities.items():
-
-                # skip relevance computation for original input
-                if position is None:
-                    continue
-
-                assert len(input_probabilities[None]) == 1
-
-                p_original = input_probabilities[None][0][0]
-
-                if std:
-                    relevance = std_relevance_scoring(p_original,
-                                                      probabilities_weights_tuple_list,
-                                                      n_samples,
-                                                      scoring_method)
-                else:
-                    relevance = average_relevance_scoring(p_original,
-                                                          probabilities_weights_tuple_list,
-                                                          n_samples,
-                                                          scoring_method)
-
-                relevances[input_id][position] = relevance
-
-        return relevances
-
-    # receive input sentences (original) + target(s) as List[Tuple[str, int]]
-    # prepare candidates for each input sentence List[Tuple[List[str], int, int, float]] (tokens, input sentence id, replaced index, weight)
-    # batch and forward batches to "batcher" method as List[List[str]]
-    # receive probabilities for each candidate sentence
-    # compute relevance per index as p_c = p(replaced index = -1), p_c_w = sum(replaced index = i) / n_samples
-    # and relevance = np.log2(odds(p_c)) - np.log2(odds(p_c_w)) with odds => p / (1 - p)
-    # return results as List[List[str], List[float]] (tokens, relevances)
+    def relevances(self, candidate_instances, candidate_results):
+        return self.config.strategy.relevances(candidate_instances, candidate_results)

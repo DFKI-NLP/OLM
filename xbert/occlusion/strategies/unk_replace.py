@@ -1,16 +1,22 @@
 from typing import List
 
+from overrides import overrides
+
 from xbert import InputInstance, OccludedInstance
-from xbert.occlusion import Strategy
+from xbert.occlusion import Strategy, OcclusionStrategy
 
 
 @Strategy.register("unk_replacement")
-class UnkReplacement(Strategy):
-    def __init__(self, unk_token: str):
+class UnkReplacement(OcclusionStrategy):
+    def __init__(self, unk_token: str,
+                 std: bool = False,
+                 scoring_method=lambda x: x):
+        super().__init__(n_samples=1, std=std, scoring_method=scoring_method)
         self.unk_token = unk_token
 
-    def occluded_instances(self,
-                           input_instance: InputInstance) -> List[OccludedInstance]:
+    @overrides
+    def get_candidate_instances(self,
+                                input_instance: InputInstance) -> List[OccludedInstance]:
         # add original sentence to candidates
         occluded_instances = [OccludedInstance.from_input_instance(input_instance)]
 
