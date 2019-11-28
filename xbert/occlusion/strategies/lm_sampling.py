@@ -3,20 +3,24 @@ from typing import List
 import torch
 import torch.nn.functional as F
 import numpy as np
+from overrides import overrides
 
 from transformers import BertTokenizer, BertForMaskedLM
 
 from xbert import InputInstance, OccludedInstance
-from xbert.occlusion import Strategy
+from xbert.occlusion import Strategy, OcclusionStrategy
 
 
 @Strategy.register("bert_lm_sampling")
-class BertLmSampling(Strategy):
+class BertLmSampling(OcclusionStrategy):
     def __init__(self,
                  bert_model: str = "bert-base-uncased",
                  cuda_device: int = -1,
                  n_samples: int = 100,
-                 verbose: bool = False) -> None:
+                 verbose: bool = False,
+                 std: bool = False,
+                 scoring_method=lambda x: x) -> None:
+        super().__init__(n_samples, std, scoring_method)
         bert = BertForMaskedLM.from_pretrained(bert_model)
         bert.eval()
         self.bert = bert.to(cuda_device)
@@ -26,8 +30,9 @@ class BertLmSampling(Strategy):
         self.verbose = verbose
         self.vocab_size = len(self.tokenizer.vocab)
 
-    def occluded_instances(self,
-                           input_instance: InputInstance) -> List[OccludedInstance]:
+    @overrides
+    def get_candidate_instances(self,
+                                input_instance: InputInstance) -> List[OccludedInstance]:
         # add original sentence to candidates
         occluded_instances = [OccludedInstance.from_input_instance(input_instance)]
 
