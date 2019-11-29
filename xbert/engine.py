@@ -1,9 +1,11 @@
 from typing import List, Tuple, Callable
 
-from collections import defaultdict
 import time
 import random
+from collections import defaultdict
+
 import numpy as np
+from tqdm import tqdm
 
 from xbert import InputInstance, OccludedInstance, Config
 
@@ -57,14 +59,14 @@ class Engine:
 
         candidate_instances = []
         # time1 = time.time()
-        for instance in input_instances:
+        for instance in tqdm(input_instances):
             candidate_instances += strategy.get_candidate_instances(instance)
         # time2 = time.time()
         # print('{:s} took {:.3f} ms'.format("CANDIDATES", (time2-time1)*1000.0))
         # print("Num candidate instances: ", len(candidate_instances))
 
         candidate_results = []
-        for i in range(0, len(candidate_instances), batch_size):
+        for i in tqdm(range(0, len(candidate_instances), batch_size), total=len(candidate_instances) // batch_size):
             batch_candidates = candidate_instances[i: i + batch_size]
             # time1 = time.time()
             candidate_results += self.batcher(batch_candidates)
