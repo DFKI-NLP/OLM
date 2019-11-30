@@ -1,6 +1,8 @@
 transformers
 allennlp
 segtok
+pandas
+dill
 
 # testing
 pytest

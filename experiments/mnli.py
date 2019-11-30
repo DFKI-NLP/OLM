@@ -41,18 +41,18 @@ def byte_pair_offsets(input_ids, tokenizer):
             offsets.append(t_idx)
         offsets.append(start_offset + len(tokens))
         return offsets
-        
+
     tokens = [tokenizer.convert_tokens_to_string(t)
               for t in tokenizer.convert_ids_to_tokens(input_ids, skip_special_tokens=False)]
     tokens = [token for token in tokens if token != "<pad>"]
     tokens = tokens[1:-1]
-    
+
     sent_1_end = tokens.index("</s>")
     sent_2_start = rindex(tokens, "</s>") + 1
-    
+
     sent_1_offsets = get_offsets(tokens[:sent_1_end], start_offset=1)
     sent_2_offsets = get_offsets(tokens[sent_2_start:], start_offset=sent_2_start+1)
-    
+
     return sent_1_offsets, sent_2_offsets
 
 
@@ -64,7 +64,7 @@ def read_mnli_dataset(path: str) -> List[Tuple[List[str], List[str], str]]:
             tokens = line.strip().split('\t')
             sent1, sent2, target = tokens[8], tokens[9], tokens[-1]
             dataset.append((sent1, sent2, target))
-            
+
     return dataset
 
 
@@ -113,33 +113,33 @@ def batcher_occlusion(batch_instances, labels, tokenizer, model, cuda_device):
             true_label_idx = MNLI_LABEL2IDX[labels[idx]]
             true_label_indices.append(true_label_idx)
             probabilities.append(probs[batch_idx][true_label_idx])
-    
+
     return probabilities
-    
-    
+
+
 def batcher_gradient(batch_instances, labels, tokenizer, model, explainer, cuda_device):
     input_ids = [encode_instance(instance, tokenizer) for instance in batch_instances]
     attention_mask = [torch.ones_like(t) for t in input_ids]
-    
+
     input_ids = collate_tokens(input_ids, pad_idx=1).to(cuda_device)
     attention_mask = collate_tokens(attention_mask, pad_idx=0).to(cuda_device)
-    
+
     inputs_embeds = model.roberta.embeddings(input_ids=input_ids).detach()
 
     true_label_idx_list = [MNLI_LABEL2IDX[labels[instance.id]] for instance in batch_instances]
     true_label_idx_tensor = torch.tensor(true_label_idx_list, dtype=torch.long, device=cuda_device)
-    
+
     inputs_embeds.requires_grad = True
     expl = explainer.explain(inp={"inputs_embeds": inputs_embeds, "attention_mask": attention_mask},
                              ind=true_label_idx_tensor)
-    
+
     input_ids_np = input_ids.cpu().numpy()
     expl_np = expl.cpu().numpy()
 
     relevances = []
     for b_idx in range(input_ids_np.shape[0]):
         sent1_offsets, sent2_offsets = byte_pair_offsets(input_ids_np[b_idx].tolist(), tokenizer)
-        
+
         relevance_dict = defaultdict(float)
         for offsets, sent_id in zip([sent1_offsets, sent2_offsets], ["sent1", "sent2"]):
             for token_idx, (token_start, token_end) in enumerate(zip(offsets, offsets[1:])):

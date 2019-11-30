@@ -17,6 +17,6 @@ MNLI_ROBERTA_RESAMPLING_CONFIG = {
 
 MNLI_ROBERTA_GRADIENT_CONFIG = {
         "strategy": "gradient",
-        "batch_size": 128,
+        "batch_size": 2,
         "seed": 1111,
 }
