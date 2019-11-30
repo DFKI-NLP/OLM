@@ -3,6 +3,7 @@ from typing import List, Dict, Tuple
 import os
 import argparse
 import dill
+import json
 from functools import partial
 from collections import defaultdict
 
@@ -195,7 +196,8 @@ def main():
     model = RobertaForSequenceClassification.from_pretrained(args.model_name_or_path).to(args.cuda_device)
 
     if args.strategy.lower() in GRAD_STRATEGIES:
-        config = Config.from_dict(MNLI_ROBERTA_GRADIENT_CONFIG)
+        config_dict = MNLI_ROBERTA_GRADIENT_CONFIG
+        config = Config.from_dict(config_dict)
 
         # output_getter extracts the first entry of the return tuple and also applies a softmax to the
         # log probabilities
@@ -230,6 +232,13 @@ def main():
     engine = Engine(config, batcher)
 
     candidate_results_file = os.path.join(args.output_dir, "candidate_instances.pkl")
+
+    with open(os.path.join(args.output_dir, "args.json"), "w") as out_f:
+        json.dump(vars(args), out_f)
+
+    with open(os.path.join(args.output_dir, "config.json"), "w") as out_f:
+        json.dump(config_dict, out_f)
+
     if args.do_run:
         candidate_instances, candidate_results = engine.run(input_instances)
         with open(candidate_results_file, "wb") as out_f:
