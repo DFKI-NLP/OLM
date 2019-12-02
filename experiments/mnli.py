@@ -17,14 +17,14 @@ from xbert.engine import Engine
 from xbert.occlusion.explainer import (VanillaGradExplainer, GradxInputExplainer,
                                        SaliencyExplainer, IntegrateGradExplainer)
 from configs import (MNLI_ROBERTA_UNK_CONFIG, MNLI_ROBERTA_RESAMPLING_CONFIG,
-                     MNLI_ROBERTA_GRADIENT_CONFIG)
+                     MNLI_ROBERTA_RESAMPLING_STD_CONFIG, MNLI_ROBERTA_GRADIENT_CONFIG)
 from utils import collate_tokens
 
 
 MNLI_IDX2LABEL = {0: 'contradiction', 1: 'neutral', 2: 'entailment'}
 MNLI_LABEL2IDX = {v: k for k, v in MNLI_IDX2LABEL.items()}
 
-OCCLUSION_STRATEGIES = ["unk", "resampling"]
+OCCLUSION_STRATEGIES = ["unk", "resampling", "resampling_std"]
 GRAD_STRATEGIES = ["grad", "gradxinput", "saliency", "integratedgrad"]
 ALL_STRATEGIES = OCCLUSION_STRATEGIES + GRAD_STRATEGIES
 
@@ -169,6 +169,8 @@ def main():
                         help="Whether to run the explainability strategy.")
     parser.add_argument("--do_relevances", action='store_true',
                         help="Whether to compute relevances from the run results.")
+    parser.add_argument("--cache_dir", default=None, type=str, required=True,
+                        help="The cache dir. Should contain the candidate_instances.pkl file of a strategy.")
 
     # Optional parameters
     parser.add_argument("--cuda_device", default=0, type=int,
@@ -220,6 +222,7 @@ def main():
         config_dict = {
                 "unk": MNLI_ROBERTA_UNK_CONFIG,
                 "resampling": MNLI_ROBERTA_RESAMPLING_CONFIG,
+                "resampling_std": MNLI_ROBERTA_RESAMPLING_STD_CONFIG,
         }[args.strategy.lower()]
         config = Config.from_dict(config_dict)
 
@@ -245,6 +248,9 @@ def main():
             dill.dump((candidate_instances, candidate_results), out_f)
 
     if args.do_relevances:
+        if args.cache_dir is not None:
+            candidate_results_file = os.path.join(args.cache_dir, "candidate_instances.pkl")
+
         with open(candidate_results_file, "rb") as in_f:
             candidate_instances, candidate_results = dill.load(in_f)
 
