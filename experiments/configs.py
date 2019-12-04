@@ -5,6 +5,12 @@ MNLI_ROBERTA_UNK_CONFIG = {
         "seed": 1111,
 }
 
+MNLI_ROBERTA_DEL_CONFIG = {
+        "strategy": "delete",
+        "batch_size": 128,
+        "seed": 1111,
+}
+
 MNLI_ROBERTA_RESAMPLING_CONFIG = {
         "strategy": "bert_lm_sampling",
         "std": True,
