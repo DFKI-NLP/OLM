@@ -20,6 +20,11 @@ from xbert.occlusion.explainer_allennlp import (AllenNLPVanillaGradExplainer,
                                                 AllenNLPGradxInputExplainer,
                                                 AllenNLPSaliencyExplainer,
                                                 AllenNLPIntegrateGradExplainer)
+
+from xbert_tasks.classification.models.text_classifier import TextClassifier
+from xbert_tasks.classification.predictors.text_classifier_predictor import TextClassifierPredictor
+from xbert_tasks.classification.dataset_readers.sst2_dataset_reader import Sst2DatasetReader
+
 from configs import (SST2_UNK_CONFIG, SST2_RESAMPLING_CONFIG,
                      SST2_RESAMPLING_STD_CONFIG, SST2_GRADIENT_CONFIG,
                      SST2_DEL_CONFIG)
@@ -121,8 +126,9 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    archive = load_archive(os.path.join(args.model_name_or_path, "model.tar.gz"))
-    Predictor.from_archive(archive, args.predictor_name)
+    archive = load_archive(archive_file=os.path.join(args.model_name_or_path, "model.tar.gz"),
+                           cuda_device=args.cuda_device)
+    predictor = Predictor.from_archive(archive, args.predictor_name)
 
     dataset = predictor._dataset_reader.read(os.path.join(args.data_dir, "dev.tsv"))
 
@@ -136,13 +142,12 @@ def main():
         # output_getter extracts the first entry of the return tuple and also applies a softmax to the
         # log probabilities
         explainer = {
-                "grad": VanillaGradExplainer,
-                "gradxinput": GradxInputExplainer,
-                "saliency": SaliencyExplainer,
-                "integratedgrad": IntegrateGradExplainer,
-        }[args.strategy](model=model,
-                         input_key="inputs_embeds",
-                         output_getter=lambda x: F.softmax(x[0], dim=-1))
+                "grad": AllenNLPVanillaGradExplainer,
+                "gradxinput": AllenNLPGradxInputExplainer,
+                "saliency": AllenNLPSaliencyExplainer,
+                "integratedgrad": AllenNLPIntegrateGradExplainer,
+        }[args.strategy](predictor=predictor,
+                         output_getter=lambda x: F.softmax(x["logits"], dim=-1))
 
         batcher = partial(batcher_gradient,
                           labels=labels,

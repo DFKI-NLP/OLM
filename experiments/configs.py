@@ -14,7 +14,7 @@ MNLI_ROBERTA_DEL_CONFIG = {
 
 MNLI_ROBERTA_RESAMPLING_CONFIG = {
         "strategy": "bert_lm_sampling",
-        "std": True,
+        "std": False,
         "cuda_device": 0,
         "bert_model": "bert-base-uncased",
         "batch_size": 128,
@@ -44,7 +44,7 @@ MNLI_ROBERTA_GRADIENT_CONFIG = {
 SST2_UNK_CONFIG = {
         "strategy": "unk_replacement",
         "batch_size": 128,
-        "unk_token": "<unk>",
+        "unk_token": "__unk__",
         "seed": 1111,
 }
 
@@ -56,7 +56,7 @@ SST2_DEL_CONFIG = {
 
 SST2_RESAMPLING_CONFIG = {
         "strategy": "bert_lm_sampling",
-        "std": True,
+        "std": False,
         "cuda_device": 0,
         "bert_model": "bert-base-uncased",
         "batch_size": 128,
