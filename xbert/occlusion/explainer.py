@@ -18,6 +18,7 @@ class VanillaGradExplainer:
         grad_out = output.data.clone()
         grad_out.fill_(0.0)
         grad_out.scatter_(1, ind.unsqueeze(0).t(), 1.0)
+        self.model.zero_grad()
         output.backward(grad_out)
         return inp[self.input_key].grad.data
 
@@ -58,7 +59,7 @@ class IntegrateGradExplainer(VanillaGradExplainer):
         grad = 0
         inp_data = inp[self.input_key].data.clone()
 
-        for alpha in np.arange(1 / self.steps, 1.0, 1 / self.steps):
+        for alpha in np.linspace(0, 1.0, num=self.steps, endpoint=False):
             new_inp = inp.copy()
             new_inp[self.input_key] = Variable(inp_data * alpha, requires_grad=True)
             g = self._backprop(new_inp, ind)
