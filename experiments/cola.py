@@ -22,16 +22,9 @@ from configs import (ROBERTA_UNK_CONFIG, ROBERTA_RESAMPLING_CONFIG,
 from utils import collate_tokens
 
 
-MNLI_IDX2LABEL = {0: 'contradiction', 1: 'neutral', 2: 'entailment'}
-MNLI_LABEL2IDX = {v: k for k, v in MNLI_IDX2LABEL.items()}
-
 OCCLUSION_STRATEGIES = ["unk", "delete", "resampling", "resampling_std"]
 GRAD_STRATEGIES = ["grad", "gradxinput", "saliency", "integratedgrad"]
 ALL_STRATEGIES = OCCLUSION_STRATEGIES + GRAD_STRATEGIES
-
-
-def rindex(alist, value):
-    return len(alist) - alist[-1::-1].index(value) - 1
 
 
 def byte_pair_offsets(input_ids, tokenizer):
@@ -49,43 +42,38 @@ def byte_pair_offsets(input_ids, tokenizer):
     tokens = [token for token in tokens if token != "<pad>"]
     tokens = tokens[1:-1]
 
-    sent_1_end = tokens.index("</s>")
-    sent_2_start = rindex(tokens, "</s>") + 1
+    offsets = get_offsets(tokens, start_offset=1)
 
-    sent_1_offsets = get_offsets(tokens[:sent_1_end], start_offset=1)
-    sent_2_offsets = get_offsets(tokens[sent_2_start:], start_offset=sent_2_start+1)
-
-    return sent_1_offsets, sent_2_offsets
+    return offsets
 
 
-def read_mnli_dataset(path: str) -> List[Tuple[List[str], List[str], str]]:
+def read_cola_dataset(path: str) -> List[Tuple[List[str], str]]:
     dataset = []
     with open(path) as fin:
         fin.readline()
-        for line in fin:
+        for index, line in enumerate(fin):
             tokens = line.strip().split('\t')
-            sent1, sent2, target = tokens[8], tokens[9], tokens[-1]
-            dataset.append((sent1, sent2, target))
+            sent, target = tokens[3], tokens[1]
+            dataset.append((sent, target))
 
     return dataset
 
 
-def dataset_to_input_instances(dataset: List[Tuple[List[str], List[str], str]]) -> List[InputInstance]:
+def dataset_to_input_instances(dataset: List[Tuple[List[str], str]]) -> List[InputInstance]:
     input_instances = []
-    for idx, (sent1, sent2, _) in enumerate(dataset):
-        instance = InputInstance(id_=idx, sent1=web_tokenizer(sent1), sent2=web_tokenizer(sent2))
+    for idx, (sent, _) in enumerate(dataset):
+        instance = InputInstance(id_=idx, sent=web_tokenizer(sent))
         input_instances.append(instance)
 
     return input_instances
 
 
 def get_labels(dataset: List[Tuple[List[str], List[str], str]]) -> List[str]:
-    return [label for _, _, label in dataset]
+    return [int(label) for _, label in dataset]
 
 
 def encode_instance(input_instance, tokenizer):
-    return tokenizer.encode(text=" ".join(input_instance.sent1.tokens),
-                            text_pair=" ".join(input_instance.sent2.tokens),
+    return tokenizer.encode(text=" ".join(input_instance.sent.tokens),
                             add_special_tokens=True,
                             return_tensors="pt")[0]
 
@@ -112,7 +100,7 @@ def batcher_occlusion(batch_instances, labels, tokenizer, model, cuda_device):
         for batch_idx, instance in enumerate(batch_instances):
             # the instance id is also the position in the list of labels
             idx = instance.id
-            true_label_idx = MNLI_LABEL2IDX[labels[idx]]
+            true_label_idx = labels[idx]
             true_label_indices.append(true_label_idx)
             probabilities.append(probs[batch_idx][true_label_idx])
 
@@ -128,7 +116,7 @@ def batcher_gradient(batch_instances, labels, tokenizer, model, explainer, cuda_
 
     inputs_embeds = model.roberta.embeddings(input_ids=input_ids).detach()
 
-    true_label_idx_list = [MNLI_LABEL2IDX[labels[instance.id]] for instance in batch_instances]
+    true_label_idx_list = [labels[instance.id] for instance in batch_instances]
     true_label_idx_tensor = torch.tensor(true_label_idx_list, dtype=torch.long, device=cuda_device)
 
     inputs_embeds.requires_grad = True
@@ -140,14 +128,15 @@ def batcher_gradient(batch_instances, labels, tokenizer, model, explainer, cuda_
 
     relevances = []
     for b_idx in range(input_ids_np.shape[0]):
-        sent1_offsets, sent2_offsets = byte_pair_offsets(input_ids_np[b_idx].tolist(), tokenizer)
+        offsets = byte_pair_offsets(input_ids_np[b_idx].tolist(), tokenizer)
 
         relevance_dict = defaultdict(float)
-        for offsets, sent_id in zip([sent1_offsets, sent2_offsets], ["sent1", "sent2"]):
-            for token_idx, (token_start, token_end) in enumerate(zip(offsets, offsets[1:])):
-                relevance = expl_np[b_idx][token_start: token_end].sum()
-                relevance_dict[(sent_id, token_idx)] = relevance
+        for token_idx, (token_start, token_end) in enumerate(zip(offsets, offsets[1:])):
+            relevance = expl_np[b_idx][token_start: token_end].sum()
+            relevance_dict[("sent", token_idx)] = relevance
         relevances.append(relevance_dict)
+
+    return relevances
 
     return relevances
 
@@ -157,7 +146,7 @@ def main():
 
     # Required parameters
     parser.add_argument("--data_dir", default=None, type=str, required=True,
-                        help="The input data dir. Should contain the .tsv files for the MNLI task.")
+                        help="The input data dir. Should contain the .tsv files for the CoLA task.")
     parser.add_argument("--model_name_or_path", default=None, type=str, required=True,
                         help="Path to pre-trained model or shortcut name.")
     parser.add_argument("--strategy", default=None, type=str, required=True,
@@ -191,7 +180,7 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    dataset = read_mnli_dataset(os.path.join(args.data_dir, "dev_matched.tsv"))
+    dataset = read_cola_dataset(os.path.join(args.data_dir, "dev.tsv"))
     input_instances = dataset_to_input_instances(dataset)
     labels = get_labels(dataset)
 

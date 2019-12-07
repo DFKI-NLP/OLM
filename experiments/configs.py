@@ -1,18 +1,18 @@
-# MNLI
-MNLI_ROBERTA_UNK_CONFIG = {
+# RoBERTa config for all tasks
+ROBERTA_UNK_CONFIG = {
         "strategy": "unk_replacement",
         "batch_size": 128,
         "unk_token": "<unk>",
         "seed": 1111,
 }
 
-MNLI_ROBERTA_DEL_CONFIG = {
+ROBERTA_DEL_CONFIG = {
         "strategy": "delete",
         "batch_size": 128,
         "seed": 1111,
 }
 
-MNLI_ROBERTA_RESAMPLING_CONFIG = {
+ROBERTA_RESAMPLING_CONFIG = {
         "strategy": "bert_lm_sampling",
         "std": False,
         "cuda_device": 0,
@@ -23,7 +23,7 @@ MNLI_ROBERTA_RESAMPLING_CONFIG = {
         "seed": 1111,
 }
 
-MNLI_ROBERTA_RESAMPLING_STD_CONFIG = {
+ROBERTA_RESAMPLING_STD_CONFIG = {
         "strategy": "bert_lm_sampling",
         "std": True,
         "cuda_device": 0,
@@ -34,13 +34,13 @@ MNLI_ROBERTA_RESAMPLING_STD_CONFIG = {
         "seed": 1111,
 }
 
-MNLI_ROBERTA_GRADIENT_CONFIG = {
+ROBERTA_GRADIENT_CONFIG = {
         "strategy": "gradient",
         "batch_size": 2,
         "seed": 1111,
 }
 
-# SST2
+# SST2 for AllenNLP
 SST2_UNK_CONFIG = {
         "strategy": "unk_replacement",
         "batch_size": 128,
