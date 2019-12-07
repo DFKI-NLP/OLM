@@ -47,13 +47,13 @@ def byte_pair_offsets(input_ids, tokenizer):
     return offsets
 
 
-def read_cola_dataset(path: str) -> List[Tuple[List[str], str]]:
+def read_sst2_dataset(path: str) -> List[Tuple[List[str], str]]:
     dataset = []
     with open(path) as fin:
         fin.readline()
         for index, line in enumerate(fin):
             tokens = line.strip().split('\t')
-            sent, target = tokens[3], tokens[1]
+            sent, target = tokens[0], tokens[1]
             dataset.append((sent, target))
 
     return dataset
@@ -178,7 +178,7 @@ def main():
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    dataset = read_cola_dataset(os.path.join(args.data_dir, "dev.tsv"))
+    dataset = read_sst2_dataset(os.path.join(args.data_dir, "dev.tsv"))
     input_instances = dataset_to_input_instances(dataset)
     labels = get_labels(dataset)
 
