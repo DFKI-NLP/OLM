@@ -54,6 +54,8 @@ Dockerfile~
 # Coverage
 .coverage
 
+.mypy_cache/
+
 models/*
 !models/.gitkeep
 

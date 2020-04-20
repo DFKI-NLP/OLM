@@ -7,8 +7,8 @@ from overrides import overrides
 
 from transformers import BertTokenizer, BertForMaskedLM
 
-from xbert import InputInstance, OccludedInstance
-from xbert.occlusion import Strategy, OcclusionStrategy
+from olm import InputInstance, OccludedInstance
+from olm.occlusion import Strategy, OcclusionStrategy
 
 
 @Strategy.register("bert_lm_sampling")

@@ -1,4 +1,4 @@
-from xbert import Config, InputInstance, Engine
+from olm import Config, InputInstance, Engine
 
 TEST_CONFIG = {
         "strategy": "unk_replacement",

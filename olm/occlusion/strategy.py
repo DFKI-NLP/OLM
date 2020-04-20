@@ -4,7 +4,7 @@ from collections import defaultdict
 from overrides import overrides
 import numpy as np
 
-from xbert import InputInstance, OccludedInstance
+from olm import InputInstance, OccludedInstance
 
 STRATEGY_REGISTRY = {}
 

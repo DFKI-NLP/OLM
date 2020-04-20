@@ -7,7 +7,7 @@ from collections import defaultdict
 import numpy as np
 from tqdm import tqdm
 
-from xbert import InputInstance, OccludedInstance, Config
+from olm import InputInstance, OccludedInstance, Config
 
 
 def weight_of_evidence(p):

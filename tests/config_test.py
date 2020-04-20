@@ -3,8 +3,8 @@ import pytest
 
 from tests import FIXTURES_ROOT
 
-from xbert import Config
-from xbert.occlusion.strategies import UnkReplacement
+from olm import Config
+from olm.occlusion.strategies import UnkReplacement
 
 TEST_CONFIG = {
         "strategy": "unk_replacement",

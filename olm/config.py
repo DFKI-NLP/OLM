@@ -1,7 +1,7 @@
 from typing import Dict
 
 import json
-from xbert.occlusion.strategy import STRATEGY_REGISTRY
+from olm.occlusion.strategy import STRATEGY_REGISTRY
 
 
 class Config:

@@ -1,5 +1,5 @@
-from xbert import InputInstance
-from xbert.occlusion.strategies import UnkReplacement
+from olm import InputInstance
+from olm.occlusion.strategies import UnkReplacement
 
 UNK_TOKEN = "__UNK__"
 

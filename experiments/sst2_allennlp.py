@@ -14,16 +14,16 @@ from allennlp.models.archival import load_archive
 from allennlp.data import Instance
 from allennlp.predictors import Predictor
 
-from xbert import InputInstance, Config
-from xbert.engine import Engine
-from xbert.occlusion.explainer_allennlp import (AllenNLPVanillaGradExplainer,
+from olm import InputInstance, Config
+from olm.engine import Engine
+from olm.occlusion.explainer_allennlp import (AllenNLPVanillaGradExplainer,
                                                 AllenNLPGradxInputExplainer,
                                                 AllenNLPSaliencyExplainer,
                                                 AllenNLPIntegrateGradExplainer)
 
-from xbert_tasks.classification.models.text_classifier import TextClassifier
-from xbert_tasks.classification.predictors.text_classifier_predictor import TextClassifierPredictor
-from xbert_tasks.classification.dataset_readers.sst2_dataset_reader import Sst2DatasetReader
+from olm_tasks.classification.models.text_classifier import TextClassifier
+from olm_tasks.classification.predictors.text_classifier_predictor import TextClassifierPredictor
+from olm_tasks.classification.dataset_readers.sst2_dataset_reader import Sst2DatasetReader
 
 from configs import (SST2_UNK_CONFIG, SST2_RESAMPLING_CONFIG,
                      SST2_RESAMPLING_STD_CONFIG, SST2_GRADIENT_CONFIG,

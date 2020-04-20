@@ -1,7 +1,7 @@
 import pytest
 
-from xbert import InputInstance, OccludedInstance
-from xbert.instances import TokenField, OccludedTokenField
+from olm import InputInstance, OccludedInstance
+from olm.instances import TokenField, OccludedTokenField
 
 SENT_1 = ["a", "b", "c"]
 SENT_2 = ["d", "e", "f"]

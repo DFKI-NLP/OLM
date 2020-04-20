@@ -1,7 +1,7 @@
 from typing import List, Dict
 
-from xbert import InputInstance, OccludedInstance
-from xbert.occlusion import Strategy, GradientStrategy
+from olm import InputInstance, OccludedInstance
+from olm.occlusion import Strategy, GradientStrategy
 
 
 @Strategy.register("gradient")

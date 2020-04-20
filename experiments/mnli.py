@@ -12,9 +12,9 @@ import torch.nn.functional as F
 from transformers import RobertaTokenizer, RobertaForSequenceClassification
 from segtok.tokenizer import web_tokenizer
 
-from xbert import InputInstance, Config
-from xbert.engine import Engine
-from xbert.occlusion.explainer import (VanillaGradExplainer, GradxInputExplainer,
+from olm import InputInstance, Config
+from olm.engine import Engine
+from olm.occlusion.explainer import (VanillaGradExplainer, GradxInputExplainer,
                                        SaliencyExplainer, IntegrateGradExplainer)
 from configs import (ROBERTA_UNK_CONFIG, ROBERTA_RESAMPLING_CONFIG,
                      ROBERTA_RESAMPLING_STD_CONFIG, ROBERTA_GRADIENT_CONFIG,
