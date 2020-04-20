@@ -40,9 +40,9 @@ def test_occluded_instance():
     with pytest.raises(ValueError) as excinfo:
         OccludedInstance.from_input_instance(
                 instance,
-                occlude_field_index=("sent1", 1),
+                occlude_token="occluded",
                 weight=5)
-    assert "'occlude_field_index' requires 'occlude_token'" in str(excinfo.value)
+    assert "'occlude_token' requires setting 'occlude_field_index'" in str(excinfo.value)
 
     occluded_inst = OccludedInstance.from_input_instance(
             instance,

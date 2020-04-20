@@ -16,11 +16,11 @@ TEST_CONFIG = {
 def test_config_create():
     with pytest.raises(ValueError) as excinfo:
         Config(value="test")
-    assert "no occlusion strategy" in str(excinfo.value).lower()
+    assert "no strategy" in str(excinfo.value).lower()
 
     with pytest.raises(ValueError) as excinfo:
         Config(strategy="not_available")
-    assert "unknown occlusion strategy" in str(excinfo.value).lower()
+    assert "unknown strategy" in str(excinfo.value).lower()
 
     conf = Config(**TEST_CONFIG)
 
