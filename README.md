@@ -1,6 +1,6 @@
 # OLM: Occlusion with Language Modeling
 
-![olm-table](table.eps)
+![olm-table](table.svg)
   
 ---
 
@@ -13,6 +13,7 @@
 * [Experiments](#-experiments)
 * [Citation](#-citation)
 * [License](#-license)
+
 
 ## Introduction
 Recently, state-of-the-art NLP models gained an increasing syntactic and semantic understanding of language and explanation methods are crucial to understand their decisions. 
