@@ -1,11 +1,30 @@
-# OLM: Considering Likelihood in NLP Classification Explanations with Occlusion and Language Modeling [[Paper](https://arxiv.org/abs/)]
+# OLM: Occlusion with Language Modeling
 
+![olm-table](table.eps)
+  
 ---
+
+## Table of contents
+
+* [Introduction](#introduction)
+* [Overview](#-overview)
+* [Requirements](#-requirements)
+* [Installation](#-installation)
+* [Experiments](#-experiments)
+* [Citation](#-citation)
+* [License](#-license)
+
+## Introduction
+Recently, state-of-the-art NLP models gained an increasing syntactic and semantic understanding of language and explanation methods are crucial to understand their decisions. 
+**OLM** is a novel explanation method that combines **O**cclusion and **L**anguage **M**odels to sample valid and syntactically correct replacements with high likelihood, given the context of the original input.
+
+This is the repository for the paper [Considering Likelihood in NLP Classification Explanations with Occlusion and Language Modeling](https://arxiv.org/abs/). 
+
 
 ## 🔭&nbsp; Overview
 
-| Path     	               | Description                         	|
-|------------------------- |------------------------------	|
+| Path                     | Description                            |
+|------------------------- |------------------------------  |
 | [data/](dataset/)     |  |
 | [experiments/](notebooks/) | |
 | [notebooks/](notebooks/) | This directory contains the notebooks that we used to produce the results in the paper.|
