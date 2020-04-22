@@ -18,7 +18,7 @@
 Recently, state-of-the-art NLP models gained an increasing syntactic and semantic understanding of language and explanation methods are crucial to understand their decisions. 
 **OLM** is a novel explanation method that combines **O**cclusion and **L**anguage **M**odels to sample valid and syntactically correct replacements with high likelihood, given the context of the original input.
 
-This is the repository for the paper [Considering Likelihood in NLP Classification Explanations with Occlusion and Language Modeling](https://arxiv.org/abs/). 
+This is the repository for the paper [Considering Likelihood in NLP Classification Explanations with Occlusion and Language Modeling](https://arxiv.org/abs/2004.09890). 
 
 
 ## 🔭&nbsp; Overview
@@ -101,8 +101,8 @@ If you find the code or dataset patch helpful, please cite the following paper:
     title={Considering Likelihood in NLP Classification Explanations with Occlusion and Language Modeling},
     author={David Harbecke and Christoph Alt},
     year={2020},
-    booktitle={Proceedings of ACL SRW},
-    url={https://arxiv.org/abs/}
+    booktitle={Proceedings of ACL 2020, Student Research Workshop},
+    url={https://arxiv.org/abs/2004.09890}
 }
 ```
 
